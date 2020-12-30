@@ -36,9 +36,5 @@ jobs:
           platforms: linux/amd64
           tags: ghcr.io/werty1st/smtp-tesseract-ocr:latest
           push: true
-          secrets: |
-            GIT_AUTH_TOKEN=${{ secrets.PAT }}
-
-
 
        

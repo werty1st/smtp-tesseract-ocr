@@ -3,7 +3,7 @@ version: "2"
 services:
 
   ocr:
-    image: smtp-tesseract-ocr
+    image: ghcr.io/werty1st/smtp-tesseract-ocr:latest
     restart: always
     ports: 
       - "1125:25"
