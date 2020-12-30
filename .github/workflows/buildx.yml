@@ -3,6 +3,8 @@ name: Publish Docker image
 on:
   release:
     types: [published]
+  push:
+    branches: master
 
 jobs:
   push_to_registry:
@@ -18,16 +20,30 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
 
+      - name: Login to GitHub Packages
+        uses: docker/login-action@v1        
+        with:
+          registry: docker.pkg.github.com
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # - name: Login to GitHub Container Registry
+      #   uses: docker/login-action@v1 
+      #   with:
+      #     registry: ghcr.io
+      #     username: ${{ github.repository_owner }}
+      #     password: ${{ secrets.CR_PAT }}          
+
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
+          context: .
+          file: ./Dockerfile
           #platforms: linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64,linux/ppc64le,linux/s390x
           platforms: linux/386,linux/amd64
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
           registry: docker.pkg.github.com
-          repository: werty1st/smtp-tesseract-ocr/smtp-tesseract-ocr
-          tag_with_ref: true
+          tags: werty1st/smtp-tesseract-ocrlatest
+          push: true
 
 
 
