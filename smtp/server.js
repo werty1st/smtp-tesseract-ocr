@@ -1,14 +1,8 @@
-const { spawn, spawnSync } = require('child_process');
-const { exec } = require('child_process');
-
-const PDFMerger = require('./pdf-merger');
-var stream = require('stream');
-const { Readable } = require('stream');
-const fs = require('fs');
-
-const SMTPServer = require("smtp-server").SMTPServer;
+const { spawnSync } = require('child_process');
+const { SMTPServer } = require("smtp-server");
 const nodemailer = require("nodemailer");
-const simpleParser = require('mailparser').simpleParser;
+const { simpleParser } = require('mailparser');
+const PDFMerger = require('./pdf-merger');
 
 
 const IN_USER = process.env.SMTP_IN_USER   || "";
@@ -37,68 +31,51 @@ const transporter = nodemailer.createTransport({
         rejectUnauthorized: false
     },
     ignoreTLS: true
-  });
+});
 
 
-async function ocr(tiffs){
+function ocr(tiffs){
 
     const merger = new PDFMerger();
 
-    //debug only, later pipe to pdf
-    const writeStream = fs.createWriteStream('./file1.pdf', { flags: 'w' });
-
-    // "tesseract stdin stdout -l deu+eng --psm 3 --oem 1 pdf"
-
-    for await (const page of tiffs) {
-        console.log(`processing page`);
-
-     
-        //start process
-        const tesseract = spawnSync("tesseract", ["stdin", "stdout", "-l", "deu", "--psm", "3", "--oem", "1", "pdf"], {
-                input: page.content,
-                encoding: "buffer",
-                maxBuffer: 10024*10024, //100MB per page
-                timeout: 5000
-        });
-        
-        if (tesseract.status == 0 && !tesseract.error){
-            merger.add(tesseract.stdout)
-        } else {
-            console.log("error during ocr", tesseract.stderr, tesseract.error)
-        }
-
-        // tesseract.stdout.on('data', (data) => {
-        //     console.log(`stdout: ${data}`);
-        // });
-
-        //pipe output to filestream
-        //tesseract.stdout.pipe(writeStream);
-        //tesseract.stdout.pipe(merger.addPage);
-
-
-        //pipe input buffer to tesseract
-        //tesseract.stdin.pipe();
-        //pageStream.pipe(tesseract.stdin);
-
-        // tesseract.stderr.on('data', (data) => {
-        //     console.error(`stderr: ${data}`);
-        // });
-
+    try {
+        for (const page of tiffs) {
+            console.log(`processing page`);
     
-        
-    };
+            //start process
+            const tesseract = spawnSync("tesseract", ["stdin", "stdout", "-l", "deu", "--psm", "3", "--oem", "1", "pdf"], {
+                    input: page.content,
+                    encoding: "buffer",
+                    maxBuffer: 10024*10024, //100MB per page
+                    timeout: 5000
+            });
+            
+            if (tesseract.status == 0 && !tesseract.error){
+                merger.add(tesseract.stdout)
+            } else {
+                console.error("error calling tesseract", tesseract.stderr, tesseract.error)
+                return {
+                    error: {
+                    msg: "error calling tesseract",
+                    stderr: JSON.stringify(tesseract.stderr),
+                    error:  JSON.stringify(tesseract.error)
+                }, pdf: null };
+            } 
+            
+        };
+    } catch (error) {
+        return {
+            error: {
+            msg: "error processing pages",
+            stderr: error.msg
+        }, pdf: null };        
+    }
 
-    //debug
-    merger.doc.pipe(writeStream);
-    await merger.doc.end();
-
-
-    //const { stdout, stderr } = await exec('find . -type f | wc -l');
+    return { error: null, pdf: merger.doc};
 }
 
 //listen for mails from scanner
 const server = new SMTPServer({
-    //lmtp: true,
     allowInsecureAuth: true,
 
     onAuth(auth, session, callback) {
@@ -113,7 +90,10 @@ const server = new SMTPServer({
 
     async onData(stream, session, callback) {
         
-        stream.on("end", callback);        
+        //if stream is consumed continue
+        stream.on("end", callback);     
+        
+        //consume stream
         const mail = await simpleParser(stream);
 
         // fix to
@@ -121,38 +101,39 @@ const server = new SMTPServer({
         // fix from
         mail.from =  OUT_FROM!=""?OUT_FROM:mail.from.text;
 
-        // process images
         // filter tiff
         const tifs = mail.attachments.filter( att => att.contentType == "image/tiff" );
 
         //remove from original array
-        tifs.map(f => mail.attachments.splice(
-                mail.attachments.findIndex(e => e.name === f.name),1
-            )
-        );
+        tifs.map(f => mail.attachments.splice(mail.attachments.findIndex(e => e.name === f.name),1));        
+
+        //main job: detect text on images and create searchable pdf => combine single pdfs to one
+        const { error, pdf } = ocr(tifs);
+
+        if (pdf){
+            //add resulting pdf to mail, replacing the tiffs
+            mail.attachments.push({
+                filename: "scan.pdf",
+                content: pdf
+            });
+        } else {
+            //inform about error
+            mail.text = error;
+        }
+
+        //flush
+        pdf.end();
+ 
+        console.log("sending mail to target")
         
-
-        const pdf = await ocr(tifs)
-
-        //console.log("mail.attachments:", mail.attachments);
-        console.log("pdf", pdf);
-        
-
-        // var results = await Promise.all(
-        //     mail.attachments(async (item) => {
-        //         await callAsynchronousOperation(item);
-        //         return item + 1;
-        //     })
-        // );
-
-        return;
         transporter.sendMail(mail, (err, info)=>{
             if (err) {
                 console.log("mail failed:", err)
             } else {
                 console.log("mail sent:", info)
             }
-        })
+            server.close();
+        });
 
     }
 });
