@@ -40,7 +40,7 @@ jobs:
           platforms: linux/amd64
           tags: |
             ghcr.io/werty1st/smtp-tesseract-ocr:latest
-            ghcr.io/werty1st/smtp-tesseract-ocr:$${{ steps.get_version.outputs.VERSION }}
+            ghcr.io/werty1st/smtp-tesseract-ocr:${{ steps.get_version.outputs.VERSION }}
           push: true
           secrets: |
             GIT_AUTH_TOKEN=${{ secrets.PAT }}
