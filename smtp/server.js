@@ -123,8 +123,6 @@ const server = new SMTPServer({
 
         //flush
         pdf.end();
- 
-        console.log("sending mail to target")
         
         transporter.sendMail(mail, (err, info)=>{
             if (err) {
