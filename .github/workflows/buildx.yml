@@ -14,10 +14,6 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2
-
-      - name: Get the version
-        id: get_version
-        run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
         
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
@@ -38,9 +34,7 @@ jobs:
           file: ./Dockerfile
           #platforms: linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64,linux/ppc64le,linux/s390x
           platforms: linux/amd64
-          tags: |
-            ghcr.io/werty1st/smtp-tesseract-ocr:latest
-            ghcr.io/werty1st/smtp-tesseract-ocr:${{ steps.get_version.outputs.VERSION }}
+          tags: ghcr.io/werty1st/smtp-tesseract-ocr:latest
           push: true
           secrets: |
             GIT_AUTH_TOKEN=${{ secrets.PAT }}
