@@ -15,6 +15,7 @@ services:
       - SMTP_IN_PORT=25              # default: 25
       - SMTP_OUT_HOST=192.168.81.1   # default: localhost
       - SMTP_OUT_PORT=1025           # default: 25
-      #- SMTP_OUT_USER=              # default: "" #set in .env
-      #- SMTP_OUT_PASS=              # default: "" #set in .env
-      #- SMTP_OUT_FROM=              # default: keep original address
+     #- SMTP_OUT_VERY=false          # default: true
+     #- SMTP_OUT_USER=               # default: "" #set in .env
+     #- SMTP_OUT_PASS=               # default: "" #set in .env
+     #- SMTP_OUT_FROM=               # default: keep original address

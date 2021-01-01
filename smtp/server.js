@@ -14,6 +14,7 @@ const OUT_PASS  = process.env.SMTP_OUT_PASS || "";
 const OUT_HOST  = process.env.SMTP_OUT_HOST || "localhost";
 const OUT_PORT  = process.env.SMTP_OUT_PORT || 25;
 const OUT_FROM  = process.env.SMTP_OUT_FROM || "";
+const OUT_VERY  = process.env.SMTP_OUT_VERY==="false"? false: true;
 
 
 
@@ -21,16 +22,14 @@ const OUT_FROM  = process.env.SMTP_OUT_FROM || "";
 const transporter = nodemailer.createTransport({
     host: OUT_HOST,
     port: OUT_PORT,
-    secure: false, // upgrade later with STARTTLS
     auth: {
       user: OUT_USER,
       pass: OUT_PASS
     },
     tls: {
         // do not fail on invalid certs
-        rejectUnauthorized: false
+        rejectUnauthorized: !OUT_VERY
     },
-    ignoreTLS: true
 });
 
 
@@ -47,7 +46,7 @@ function ocr(tiffs){
                     input: page.content,
                     encoding: "buffer",
                     maxBuffer: 10024*10024, //100MB per page
-                    timeout: 5000
+                    timeout: 30000
             });
             
             if (tesseract.status == 0 && !tesseract.error){
