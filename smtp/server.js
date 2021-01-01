@@ -116,13 +116,13 @@ const server = new SMTPServer({
                 filename: "scan.pdf",
                 content: pdf
             });
+            //flush
+            pdf.end();
         } else {
             //inform about error
             mail.text = error;
         }
 
-        //flush
-        pdf.end();
         
         transporter.sendMail(mail, (err, info)=>{
             if (err) {
