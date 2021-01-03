@@ -1,4 +1,5 @@
 const { spawnSync } = require('child_process');
+const {default: PQueue} = require('p-queue');
 const { SMTPServer } = require("smtp-server");
 const nodemailer = require("nodemailer");
 const { simpleParser } = require('mailparser');
@@ -17,6 +18,7 @@ const OUT_FROM  = process.env.SMTP_OUT_FROM || "";
 const OUT_VERY  = process.env.SMTP_OUT_VERY==="false"? false: true;
 
 
+const queue = new PQueue({concurrency: 1});
 
 //forwad modified mail to smtp relay
 const transporter = nodemailer.createTransport({
@@ -32,46 +34,89 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-
 function ocr(tiffs){
 
     const merger = new PDFMerger();
 
     try {
-        for (const page of tiffs) {
-            console.log(`processing page`);
-    
+        for (const [index, page] of tiffs.entries()) {
+            console.log(`processing page ${index+1} of ${tiffs.length}`);
+            
             //start process
             const tesseract = spawnSync("tesseract", ["stdin", "stdout", "-l", "deu", "--psm", "3", "--oem", "1", "pdf"], {
                     input: page.content,
                     encoding: "buffer",
                     maxBuffer: 10024*10024, //100MB per page
-                    timeout: 30000
+                    timeout: 10000
             });
+
             
             if (tesseract.status == 0 && !tesseract.error){
                 merger.add(tesseract.stdout)
             } else {
-                console.error("error calling tesseract", tesseract.stderr, tesseract.error)
+                console.error("error calling tesseractA", tesseract.stderr.toString("utf8"))
+                console.error("error calling tesseractB", tesseract.error)
                 return {
                     error: {
-                    msg: "error calling tesseract",
-                    stderr: JSON.stringify(tesseract.stderr),
-                    error:  JSON.stringify(tesseract.error)
+                    msg: "error calling tesseract"
                 }, pdf: null };
             } 
             
         };
     } catch (error) {
+        console.log("tesseract.error2", error)
         return {
             error: {
-            msg: "error processing pages",
-            stderr: error.msg
-        }, pdf: null };        
+                msg: "error processing pages",
+                stderr: error.msg
+            },
+            pdf: null };        
     }
 
     return { error: null, pdf: merger.doc};
 }
+
+
+function job(mail){
+
+    // fix to
+    mail.to = mail.to.text;
+    // fix from
+    mail.from =  OUT_FROM!=""?OUT_FROM:mail.from.text;
+
+    // filter tiff
+    const tifs = mail.attachments.filter( att => att.contentType == "image/tiff" );
+
+    //remove from original array
+    tifs.map(f => mail.attachments.splice(mail.attachments.findIndex(e => e.name === f.name),1));        
+
+    //main job: detect text on images and create searchable pdf => combine single pdfs to one
+    const { error, pdf } = ocr(tifs);
+    
+
+    if (pdf){
+        //add resulting pdf to mail, replacing the tiffs
+        mail.attachments.push({
+            filename: "scan.pdf",
+            content: pdf
+        });
+        //flush
+        pdf.end();
+    } else {
+        //inform about error
+        mail.text = error;
+        console.log("no mail", mail);
+    }
+
+    transporter.sendMail(mail, (err, info)=>{
+        if (err) {
+            console.log("mail failed:", err)
+        } else {
+            console.log("mail sent:", info)
+        }            
+    });
+}
+
 
 //listen for mails from scanner
 const server = new SMTPServer({
@@ -90,48 +135,17 @@ const server = new SMTPServer({
     async onData(stream, session, callback) {
         
         //if stream is consumed continue
-        stream.on("end", callback);     
+        stream.on("end", callback);  
+        
         
         //consume stream
         const mail = await simpleParser(stream);
-
-        // fix to
-        mail.to = mail.to.text;
-        // fix from
-        mail.from =  OUT_FROM!=""?OUT_FROM:mail.from.text;
-
-        // filter tiff
-        const tifs = mail.attachments.filter( att => att.contentType == "image/tiff" );
-
-        //remove from original array
-        tifs.map(f => mail.attachments.splice(mail.attachments.findIndex(e => e.name === f.name),1));        
-
-        //main job: detect text on images and create searchable pdf => combine single pdfs to one
-        const { error, pdf } = ocr(tifs);
-
-        if (pdf){
-            //add resulting pdf to mail, replacing the tiffs
-            mail.attachments.push({
-                filename: "scan.pdf",
-                content: pdf
-            });
-            //flush
-            pdf.end();
-        } else {
-            //inform about error
-            mail.text = error;
-        }
-
         
-        transporter.sendMail(mail, (err, info)=>{
-            if (err) {
-                console.log("mail failed:", err)
-            } else {
-                console.log("mail sent:", info)
-            }
-            server.close();
-        });
-
+        queue.add( () => job(mail) );
+        
+        //tesseract cant run in parallel
+        //no working solution
+        //queue.onIdle().then(()=> server.close() );
     }
 });
 

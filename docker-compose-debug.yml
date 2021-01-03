@@ -1,5 +1,4 @@
-version: "2"
-
+version: "2.2"
 
 services:
 
@@ -9,10 +8,11 @@ services:
       dockerfile: Dockerfile
       context: .
     ports: 
-      - "1125:25"
+      - "1126:25"
     volumes: 
       - ./smtp:/app
-    command: npm run debug
+    #command: npm run debug
+    command: npm run serve
     env_file: .env
     environment: 
       - SMTP_IN_USER=printer         # default: ""
