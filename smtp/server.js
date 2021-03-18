@@ -16,7 +16,7 @@ const OUT_HOST  = process.env.SMTP_OUT_HOST || "localhost";
 const OUT_PORT  = process.env.SMTP_OUT_PORT || 25;
 const OUT_FROM  = process.env.SMTP_OUT_FROM || "";
 const OUT_VERY  = process.env.SMTP_OUT_VERY==="false"? false: true;
-const TIMEOUT   = process.env.TIMEOUT || 10000;
+const TIMEOUT   = (() => { try { return parseInt(process.env.TIMEOUT)} catch (e) { return 10000 } })();
 
 const queue = new PQueue({concurrency: 1});
 
