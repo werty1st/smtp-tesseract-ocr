@@ -4,20 +4,29 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "debug": "nodemon server.js",
-    "serve": "node server.js"
+    "upgrade": "npx npm-check-updates -u",
+    "debug": "nodemon --watch '*.ts' --ignore '*.spec.ts' --exec 'ts-node' server.ts",
+    "serve": "ts-node server.ts",
+    "tsc": "tsc",
+    "ts-node": "ts-node",
+    "cc": "lib/lambda/index.ts --bundle --platform=node --target=node12 --external:aws-sdk --outfile=.lambda/index.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "mailparser": "^3.0.1",
-    "nodemailer": "^6.4.17",
+    "mailparser": "^3.1.0",
+    "nodemailer": "^6.5.0",
     "p-queue": "^6.6.2",
     "pdfjs": "^2.4.2",
-    "smtp-server": "^3.8.0"
+    "smtp-server": "^3.8.0",
+    "ts-node": "^9.1.1"
   },
   "devDependencies": {
-    "nodemon": "^2.0.6"
+    "@types/node": "14.14.36",
+    "@types/mailparser": "^3.0.2",
+    "@types/nodemailer": "^6.4.1",
+    "@types/smtp-server": "^3.5.6",    
+    "nodemon": "^2.0.7",
+    "typescript": "~4.2.3"
   }
 }

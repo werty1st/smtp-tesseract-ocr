@@ -19,3 +19,4 @@ services:
      #- SMTP_OUT_USER=               # default: "" #set in .env
      #- SMTP_OUT_PASS=               # default: "" #set in .env
      #- SMTP_OUT_FROM=               # default: keep original address
+     #- TIMEOUT=60000                # default: 10000ms
