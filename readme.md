@@ -1,6 +1,5 @@
 ## Motivation
 
-
 I wanted to have searchable PDF Scans from my MFP (Scanner).
 
 This Docker Image can be put between a MFP (printer+scanner) and a Mail Provider.
@@ -34,6 +33,7 @@ services:
       #- SMTP_OUT_USER=              # default: "" #set in .env
       #- SMTP_OUT_PASS=              # default: "" #set in .env
       #- SMTP_OUT_FROM=              # default: keep original address
+      #- TIMEOUT=60000               # default: 10000ms
 
 ```
 _Adjust the environment variables as desired._
@@ -44,6 +44,16 @@ Launch the service with:
 ```bash
 docker-compose up -d
 ```
+
+## OCR Language Selection
+
+This images contains models for _english_, _german_, _russian_ and _korean_ language. You can tell tesseract which languages models it should use, by writing the short form in square brackets into the E-Mail Subject.
+```bash
+ sendmail -subject [deu+eng] ...
+ sendmail -subject [rus+kor] ...
+ #or just one
+ sendmail -subject [kor] ...
+ ```
 
 ## Remarks
 
