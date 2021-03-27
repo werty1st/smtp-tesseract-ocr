@@ -1,9 +1,11 @@
 import { spawnSync } from 'child_process';
 import { SMTPServer } from "smtp-server";
 import { createTransport } from "nodemailer";
-import { simpleParser } from 'mailparser';
+import { ParsedMail, simpleParser } from 'mailparser';
 import PQueue from "p-queue";
 import PDFMerger from'./pdf-merger';
+import { Document } from 'pdfjs';
+
 
 
 const IN_USER = process.env.SMTP_IN_USER   || "";
@@ -18,8 +20,11 @@ const OUT_FROM  = process.env.SMTP_OUT_FROM || "";
 const OUT_VERY  = process.env.SMTP_OUT_VERY==="false"? false: true;
 const TIMEOUT   = parseInt(process.env.TIMEOUT || "10000");
 
+const DICT      = ["deu", "kor", "eng", "rus"];
+const DEFAULT   = ["deu"];
 
 const queue = new PQueue({concurrency: 1});
+
 
 //forwad modified mail to smtp relay
 const transporter = createTransport({
@@ -35,22 +40,24 @@ const transporter = createTransport({
     },
 });
 
-function ocr(tiffs: any){
+function ocr(tiffs: Array<any>, lang: Array<string>): { error: Error|null, pdf: Document|null} {
 
     const merger = new PDFMerger();
+    const langParam = lang.join("+");
 
-    try {
+    try {        
+        console.log("processing", tiffs.length, "pages");
+
         for (const [index, page] of tiffs.entries()) {
-            console.log(`processing page ${index+1} of ${tiffs.length}`);
+            console.log(`processing page ${index+1} of ${tiffs.length} using ${lang} dicts`);
             
             //start process
-            const tesseract = spawnSync("tesseract", ["stdin", "stdout", "-l", "deu", "--psm", "3", "--oem", "1", "pdf"], {
-                    input: page.content,
-                    encoding: "buffer",
-                    maxBuffer: 10024*10024, //100MB per page
-                    timeout: 10000
+            const tesseract = spawnSync("tesseract", ["stdin", "stdout", "-l", ...langParam, "--psm", "3", "--oem", "1", "pdf"], {
+                input: page.content,
+                encoding: "buffer",
+                maxBuffer: 10024*10024, //100MB per page
+                timeout: TIMEOUT
             });
-
             
             if (tesseract.status == 0 && !tesseract.error){
                 merger.add(tesseract.stdout)
@@ -58,41 +65,52 @@ function ocr(tiffs: any){
                 console.error("error calling tesseractA", tesseract.stderr.toString("utf8"))
                 console.error("error calling tesseractB", tesseract.error)
                 return {
-                    error: {
-                    msg: "error calling tesseract"
-                }, pdf: null };
-            } 
-            
-        };
+                    error: new Error("error calling tesseract"),
+                    pdf: null
+                };
+            }
+        };        
     } catch (error) {
-        console.log("tesseract.error2", error)
+        console.error("tesseract.error", error)
         return {
-            error: {
-                msg: "error processing pages",
-                stderr: error.msg
-            },
-            pdf: null };        
+            error: new Error("error processing pages"),
+            pdf: null
+        };        
     }
 
-    return { error: null, pdf: merger.doc};
+    return { error: null, pdf: merger.doc };
 }
 
+function detectLang( subject: string ) : Array<string> {    
+    try {
+        const langs = (subject.match(/\[([a-z,+]*)\]/) || DEFAULT)[1].split("+");
+        const targetDict = langs.filter(value => DICT.includes(value));
+        if (targetDict.length > 0) return targetDict;
+    } catch (error) {        
+    }
+    return DEFAULT;
+}
 
 function job(mail: any){
 
     // fix to
     mail.to = mail.to.text;
+
     // fix from
-    mail.from =  OUT_FROM!=""?OUT_FROM:mail.from.text;
+    mail.from =  OUT_FROM!=""?OUT_FROM:mail.from.text ;
 
     // filter tiff
     const tifs = mail.attachments.filter( (att: { contentType: string; }) => att.contentType == "image/tiff" );
 
     //remove from original array
-    tifs.map((f: { name: any; }) => mail.attachments.splice(mail.attachments.findIndex((e: { name: any; }) => e.name === f.name),1));        
+    tifs.map((f: { filename: any; }) => mail.attachments.splice(mail.attachments.findIndex((e: { filename: any; }) => e.filename === f.filename),1));        
+
+    //find languages
+    const lang = detectLang(mail.subject);
 
     //main job: detect text on images and create searchable pdf => combine single pdfs to one
-    const { error, pdf } = ocr(tifs);
+    const { error, pdf } = ocr(tifs, lang);
+
     
 
     if (pdf){
@@ -140,7 +158,7 @@ const server = new SMTPServer({
         
         
         //consume stream
-        const mail = await simpleParser(stream);
+        const mail:ParsedMail = await simpleParser(stream);
         
         queue.add( () => job(mail) );
         

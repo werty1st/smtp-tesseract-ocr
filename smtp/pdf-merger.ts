@@ -9,7 +9,7 @@ export default class PDFMerger {
     this._doc = new Document()
   }
 
-  get doc () {
+  get doc (): Document {
       return this._doc;
   }
 
