@@ -39,7 +39,7 @@ WORKDIR /app
 
 RUN npm install --only=production
 
-CMD ["node", "server.js"]
+CMD ["npm", "run", "serve"]
 
 
 #https://github.com/tesseract-ocr/tesseract/blob/master/tessdata/pdf.ttf

@@ -19,14 +19,14 @@
     "p-queue": "^6.6.2",
     "pdfjs": "^2.4.2",
     "smtp-server": "^3.8.0",
-    "ts-node": "^9.1.1"
+    "ts-node": "^9.1.1",
+    "typescript": "~4.2.3"
   },
   "devDependencies": {
     "@types/node": "14.14.36",
     "@types/mailparser": "^3.0.2",
     "@types/nodemailer": "^6.4.1",
     "@types/smtp-server": "^3.5.6",    
-    "nodemon": "^2.0.7",
-    "typescript": "~4.2.3"
+    "nodemon": "^2.0.7"
   }
 }

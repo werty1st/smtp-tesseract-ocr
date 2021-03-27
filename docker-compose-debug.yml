@@ -3,7 +3,7 @@ version: "2.2"
 services:
 
   ocr:
-    image: ghcr.io/werty1st/smtp-tesseract-ocr:debug
+    image: ghcr.io/werty1st/smtp-tesseract-ocr:latest
     build: 
       dockerfile: Dockerfile
       context: .
