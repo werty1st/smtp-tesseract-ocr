@@ -18,7 +18,7 @@ const OUT_HOST  = process.env.SMTP_OUT_HOST || "localhost";
 const OUT_PORT  = parseInt(process.env.SMTP_OUT_PORT || "25" );
 const OUT_FROM  = process.env.SMTP_OUT_FROM || "";
 const OUT_VERY  = process.env.SMTP_OUT_VERY==="false"? false: true;
-const TIMEOUT   = parseInt(process.env.TIMEOUT || "10000");
+const TIMEOUT   = parseInt(process.env.TIMEOUT || "30000");
 
 const DICT      = ["deu", "kor", "eng", "rus"];
 const DEFAULT   = ["deu"];
@@ -45,6 +45,9 @@ function ocr(tiffs: Array<any>, lang: Array<string>): { error: Error|null, pdf: 
     const merger = new PDFMerger();
     const langParam = lang.join("+");
 
+    //more time for more languages
+    const timeout = lang.length * TIMEOUT;
+
     try {        
         console.log("processing", tiffs.length, "pages");
 
@@ -52,11 +55,11 @@ function ocr(tiffs: Array<any>, lang: Array<string>): { error: Error|null, pdf: 
             console.log(`processing page ${index+1} of ${tiffs.length} using ${lang} dicts`);
             
             //start process
-            const tesseract = spawnSync("tesseract", ["stdin", "stdout", "-l", ...langParam, "--psm", "3", "--oem", "1", "pdf"], {
+            const tesseract = spawnSync("tesseract", ["stdin", "stdout", "-l", langParam, "--psm", "3", "--oem", "1", "pdf"], {
                 input: page.content,
                 encoding: "buffer",
                 maxBuffer: 10024*10024, //100MB per page
-                timeout: TIMEOUT
+                timeout: timeout
             });
             
             if (tesseract.status == 0 && !tesseract.error){
