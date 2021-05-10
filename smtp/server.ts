@@ -1,27 +1,27 @@
 import { spawnSync } from 'child_process';
 import { SMTPServer } from "smtp-server";
 import { createTransport } from "nodemailer";
-import { ParsedMail, simpleParser } from 'mailparser';
+import { Attachment, ParsedMail, simpleParser } from 'mailparser';
 import PQueue from "p-queue";
 import PDFMerger from'./pdf-merger';
 import { Document } from 'pdfjs';
 
 
 
-const IN_USER = process.env.SMTP_IN_USER   || "";
-const IN_PASS = process.env.SMTP_IN_PASS   || "";
+const IN_USER = process.env.SMTP_IN_USER  || "";
+const IN_PASS = process.env.SMTP_IN_PASS  || "";
 const IN_PORT = parseInt(process.env.PORT || "25");
 
-const OUT_USER  = process.env.SMTP_OUT_USER || "";
-const OUT_PASS  = process.env.SMTP_OUT_PASS || "";
-const OUT_HOST  = process.env.SMTP_OUT_HOST || "localhost";
-const OUT_PORT  = parseInt(process.env.SMTP_OUT_PORT || "25" );
-const OUT_FROM  = process.env.SMTP_OUT_FROM || "";
-const OUT_VERY  = process.env.SMTP_OUT_VERY==="false"? false: true;
-const TIMEOUT   = parseInt(process.env.TIMEOUT || "30000");
+const OUT_USER = process.env.SMTP_OUT_USER || "";
+const OUT_PASS = process.env.SMTP_OUT_PASS || "";
+const OUT_HOST = process.env.SMTP_OUT_HOST || "localhost";
+const OUT_PORT = parseInt(process.env.SMTP_OUT_PORT || "25" );
+const OUT_FROM = process.env.SMTP_OUT_FROM || "";
+const OUT_VERY = process.env.SMTP_OUT_VERY==="false"? false: true;
+const TIMEOUT  = parseInt(process.env.TIMEOUT || "30000");
 
-const DICT      = ["deu", "kor", "eng", "rus"];
-const DEFAULT   = ["deu"];
+const DICT     = ["deu", "kor", "eng", "rus"];
+const DEFAULT  = ["deu"];
 
 const queue = new PQueue({concurrency: 1});
 
@@ -43,7 +43,7 @@ const transporter = createTransport({
 function ocr(tiffs: Array<any>, lang: Array<string>): { error: Error|null, pdf: Document|null} {
 
     const merger = new PDFMerger();
-    const langParam = lang.join("+");
+    const langParam = lang.join("+");  // ["deu", "kor"] => deu+kor
 
     //more time for more languages
     const timeout = lang.length * TIMEOUT;
@@ -103,31 +103,34 @@ function job(mail: any){
     mail.from =  OUT_FROM!=""?OUT_FROM:mail.from.text ;
 
     // filter tiff
-    const tifs = mail.attachments.filter( (att: { contentType: string; }) => att.contentType == "image/tiff" );
+    const tifs:Array<Attachment> = mail.attachments.filter( (att: { contentType: string; }) => att.contentType == "image/tiff" );
 
-    //remove from original array
-    tifs.map((f: { filename: any; }) => mail.attachments.splice(mail.attachments.findIndex((e: { filename: any; }) => e.filename === f.filename),1));        
+    if (tifs.length > 0) {
 
-    //find languages
-    const lang = detectLang(mail.subject);
-
-    //main job: detect text on images and create searchable pdf => combine single pdfs to one
-    const { error, pdf } = ocr(tifs, lang);
-
+        //remove from original array
+        tifs.map( (f:Attachment) => mail.attachments.splice(mail.attachments.findIndex((e: { filename: any; }) => e.filename === f.filename),1));        
     
+        //find languages
+        const lang = detectLang(mail.subject);
+    
+        //main job: detect text on images and create searchable pdf => combine single pdfs to one
+        const { error, pdf } = ocr(tifs, lang);
 
-    if (pdf){
-        //add resulting pdf to mail, replacing the tiffs
-        mail.attachments.push({
-            filename: "scan.pdf",
-            content: pdf
-        });
-        //flush
-        pdf.end();
+        if (pdf){
+            //add resulting pdf to mail, replacing the tiffs
+            mail.attachments.push({
+                filename: "scan.pdf",
+                content: pdf
+            });
+            //flush
+            pdf.end();
+        } else {
+            //inform about error
+            mail.text = error;
+            console.log("OCR failed mail", mail);            
+        }
     } else {
-        //inform about error
-        mail.text = error;
-        console.log("no mail", mail);
+        console.log("Passthrough");
     }
 
     transporter.sendMail(mail, (err: any, info: any)=>{
