@@ -65,7 +65,7 @@ This images contains models for _english_, _german_, _russian_ and _korean_ lang
 ## Future
 
 * Migrate from clearlinux to a base image that is also available for ARM.
-* Adjust language detection based on the Subject
+* ~~Adjust language detection based on the Subject~~
 * Modify the Dockerfile so the files inside the ./model directory will be downloaded from their repository during docker build
 * Parse the first page as text also, to include it into the mails body.
 * use AI to determine the PDFs filename 🤪

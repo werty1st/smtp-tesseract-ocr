@@ -1,5 +1,7 @@
 version: "2.2"
 
+# docker-compose -f docker-compose-debug.yml run --rm ocr bash
+
 services:
 
   ocr:

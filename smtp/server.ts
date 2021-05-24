@@ -1,3 +1,4 @@
+import { DateTime } from "luxon";
 import { spawnSync } from 'child_process';
 import { SMTPServer } from "smtp-server";
 import { createTransport } from "nodemailer";
@@ -5,7 +6,6 @@ import { Attachment, ParsedMail, simpleParser } from 'mailparser';
 import PQueue from "p-queue";
 import PDFMerger from'./pdf-merger';
 import { Document } from 'pdfjs';
-
 
 
 const IN_USER = process.env.SMTP_IN_USER  || "";
@@ -118,8 +118,9 @@ function job(mail: any){
 
         if (pdf){
             //add resulting pdf to mail, replacing the tiffs
+            const datePrefix = DateTime.now().toFormat('yyyy-LL-dd__HH-mm-ss')
             mail.attachments.push({
-                filename: "scan.pdf",
+                filename: `scan_${datePrefix}.pdf`,
                 content: pdf
             });
             //flush
