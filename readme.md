@@ -1,6 +1,6 @@
 ## Motivation
 
-I wanted to have searchable PDF Scans from my MFP (Scanner).
+I wanted to have searchable PDF Scans from my MFP (Scanner). 
 
 This Docker Image can be put between a MFP (printer+scanner) and a Mail Provider.
 
