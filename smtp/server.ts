@@ -4,7 +4,7 @@ import { SMTPServer } from "smtp-server";
 import { createTransport } from "nodemailer";
 import { Attachment, ParsedMail, simpleParser } from 'mailparser';
 import PQueue from "p-queue";
-import PDFMerger from'./pdf-merger';
+import { PDFMerger } from './pdf-merger.js';
 import { Document } from 'pdfjs';
 
 

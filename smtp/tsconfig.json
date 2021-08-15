@@ -1,8 +1,8 @@
 {
     "compilerOptions": {
-      "target": "ES2018",
-      "module": "commonjs",
-      "lib": ["es2018", "es2019.array"],
+      "target": "es2020",
+      "module": "es2020",
+      "lib": ["es2020", "es2019.array", "dom"],
       "declaration": true,
       "strict": true,
       "noImplicitAny": true,
@@ -15,9 +15,9 @@
       "noFallthroughCasesInSwitch": false,
       "inlineSourceMap": true,
       "inlineSources": true,
-      "experimentalDecorators": true,
+      "esModuleInterop": true,
+      "moduleResolution": "node",
       "strictPropertyInitialization": false,
-      "resolveJsonModule": true,
       "typeRoots": ["./node_modules/@types"],
       "outDir": ".build"
     },

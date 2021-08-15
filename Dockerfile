@@ -1,12 +1,12 @@
 FROM clearlinux/tesseract-ocr:4
 
-RUN swupd bundle-add nodejs-basic --no-boot-update
+RUN swupd bundle-add nodejs-basic curl --no-boot-update
 ADD models /usr/share/tessdata/.
 ADD smtp /app
 
 WORKDIR /app
 
-RUN npm install --only=production
+RUN npm install --only=production && npx n install 16 && npm run build
 
 CMD ["npm", "run", "serve"]
 

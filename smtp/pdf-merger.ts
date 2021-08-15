@@ -1,7 +1,7 @@
 import { Document, ExternalDocument } from 'pdfjs';
 import * as fs from 'fs';
 
-export default class PDFMerger {
+class PDFMerger {
 
   private _doc: Document;
 
@@ -81,3 +81,5 @@ export default class PDFMerger {
   }
 }
 
+
+export { PDFMerger }
