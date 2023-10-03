@@ -8,9 +8,9 @@ import { PDFMerger } from './pdf-merger.js';
 import { Document } from 'pdfjs';
 
 
-const IN_USER = process.env.SMTP_IN_USER  || "";
-const IN_PASS = process.env.SMTP_IN_PASS  || "";
-const IN_PORT = parseInt(process.env.PORT || "25");
+const IN_USER = process.env.SMTP_IN_USER          || "";
+const IN_PASS = process.env.SMTP_IN_PASS          || "";
+const IN_PORT = parseInt(process.env.SMTP_IN_PORT || "25");
 
 const OUT_USER = process.env.SMTP_OUT_USER || "";
 const OUT_PASS = process.env.SMTP_OUT_PASS || "";
