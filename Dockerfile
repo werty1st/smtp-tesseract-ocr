@@ -1,4 +1,4 @@
-FROM clearlinux/tesseract-ocr:4
+FROM clearlinux/tesseract-ocr:5
 
 RUN swupd bundle-add nodejs-basic curl --no-boot-update
 ADD models /usr/share/tessdata/.
