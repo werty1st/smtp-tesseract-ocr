@@ -114,7 +114,7 @@ function job(mail: any){
         const lang = detectLang(mail.subject);
     
         //main job: detect text on images and create searchable pdf => combine single pdfs to one
-        const { error, pdf } = ocr(tifs, lang);
+        let { error, pdf } = ocr(tifs, lang);
 
         if (pdf){
             //add resulting pdf to mail, replacing the tiffs
@@ -125,6 +125,7 @@ function job(mail: any){
             });
             //flush
             pdf.end();
+            pdf = null;
         } else {
             //inform about error
             mail.text = error;
@@ -148,14 +149,14 @@ function job(mail: any){
 const server = new SMTPServer({
     allowInsecureAuth: true,
 
-    onAuth(auth: any, session: any, callback: any) {
+    onAuth(auth: any, session: any, callback: any ) {
         
         if (auth.username !== IN_USER || auth.password !== IN_PASS) {
             console.log("Login failed");
-            return callback(new Error("Invalid username or password"), undefined);
+            return callback(new Error("Invalid username or password"));
         }
         console.log("Login successfull");
-        callback(undefined, {user: 123}); // dummy user required
+        return callback(null, { user: IN_USER })
     },
 
     async onData(stream: any, session: any, callback: any) {
