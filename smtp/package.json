@@ -1,6 +1,6 @@
 {
   "name": "ocr",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "",
   "main": "server.js",
   "type": "module",
@@ -15,22 +15,22 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "esbuild": "^0.12.20",
-    "luxon": "^1.27.0",
-    "mailparser": "^3.1.0",
-    "nodemailer": "^6.5.0",
-    "p-queue": "^5",
-    "pdfjs": "^2.4.2",
-    "smtp-server": "^3.8.0"
+    "esbuild": "^0.19.4",
+    "luxon": "^3.4.3",
+    "mailparser": "^3.6.5",
+    "nodemailer": "^6.9.5",
+    "p-queue": "^7",
+    "pdfjs": "^2.5.2",
+    "smtp-server": "^3.13.0"
   },
   "devDependencies": {
-    "typescript": "~4.2.3",
-    "ts-node": "^9.1.1",
-    "@types/luxon": "^1.26.5",
-    "@types/mailparser": "^3.0.2",
-    "@types/node": "14.14.36",
-    "@types/nodemailer": "^6.4.1",
-    "@types/smtp-server": "^3.5.6",
-    "nodemon": "^2.0.7"
+    "typescript": "~5.2.2",
+    "ts-node": "^10.9.1",
+    "@types/luxon": "^3.3.2",
+    "@types/mailparser": "^3.4.1",
+    "@types/node": "20.8.2",
+    "@types/nodemailer": "^6.4.11",
+    "@types/smtp-server": "^3.5.8",
+    "nodemon": "^3.0.1"
   }
 }

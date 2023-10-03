@@ -8,7 +8,7 @@ services:
     ports: 
       - "1125:25"
     command: npm run serve
-    env_file: .env
+    #env_file: .env
     environment: 
       - SMTP_IN_USER=printer         # default: ""
       - SMTP_IN_PASS=printer         # default: ""
